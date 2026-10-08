@@ -1,7 +1,10 @@
 streamlit
 selenium
+undetected-chromedriver
 tensorflow-cpu
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
 Pillow
+pytz
+numpy
