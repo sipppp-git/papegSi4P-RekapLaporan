@@ -8,3 +8,4 @@ google-auth-oauthlib
 Pillow
 pytz
 numpy
+setuptools
