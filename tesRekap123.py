@@ -11,6 +11,7 @@ import streamlit as st
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
+import shutil
 
 # ====================================================================
 # 1. FUNGSI GOOGLE DRIVE API (KURIR PENGIRIM KE CLOUD)
@@ -167,8 +168,22 @@ def jalankan_bot():
                 """
                 
                 hasil_csv = driver.execute_script(js_script)
-                
-                if hasil_csv != "gagal":
+                # 1. CABANG BARU: Jika tabel ada, tapi isinya kosong (0 baris data)
+                if hasil_csv == "KOSONG":
+                    print("[-] Tabel kosong. Menggunakan template 'Belum_ada_laporan.csv'...")
+                    jam_format = waktu_sekarang.strftime('%H.%M.%S')
+                    nama_file_baru = f"Rekap Laporan LCS {waktu_sekarang.strftime('%d-%m-%Y')}{jam_format} (KOSONG).csv"
+                    
+                    # Duplikat file template ke nama baru
+                    shutil.copy("Belum_ada_laporan.csv", nama_file_baru)
+                    
+                    # Lempar ke Drive
+                    file_id = upload_ke_drive(nama_file_baru)
+                    pesan_kosong = "Selesai: Data hari ini kosong. File CSV pereset telah diunggah."
+                    print(f"[-] {pesan_kosong}")
+                    return pesan_kosong
+
+                elif hasil_csv != "gagal":
                     # Python yang mengambil alih penamaan dan pembuatan file
                     jam_format = waktu_sekarang.strftime('%H.%M.%S')
                     nama_file_baru = f"Rekap Laporan LCS {waktu_sekarang.strftime('%d-%m-%Y')}{jam_format}.csv"
@@ -184,6 +199,7 @@ def jalankan_bot():
                     pesan_sukses = f"Selesai! Data Rekap LCS terbaru berhasil diunggah ke Drive (ID: {file_id})"
                     print(f"🔥 [SUKSES TOTAL] {pesan_sukses}")
                     return pesan_sukses
+                    
                 else:
                     print("[-] Notifikasi: Tabel kosong, mencoba kembali...")
                     continue
