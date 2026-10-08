@@ -13,6 +13,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 import shutil
 
+
 # ====================================================================
 # 1. FUNGSI GOOGLE DRIVE API (KURIR PENGIRIM KE CLOUD)
 # ====================================================================
@@ -92,6 +93,11 @@ def jalankan_bot():
     # PENYAMARAN EKSTRA: Mencegah layout web menciut di server Linux
     options.add_argument("--force-device-scale-factor=1")
     options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    # --- TAMBAHKAN 4 BARIS PENYAMARAN CLOUDFLARE DI SINI ---
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("--disable-infobars")
+    options.add_argument("--disable-popup-blocking")
+    options.add_argument("--disable-web-security")
 
     driver = uc.Chrome(version_main=154, options=options)
 
