@@ -88,7 +88,10 @@ def jalankan_bot():
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--window-size=1920,1080") # Paksa resolusi agar elemen web tidak bertumpuk
+    options.add_argument("--window-size=1920,1080") # Paksa resolusi Full HD
+    # PENYAMARAN EKSTRA: Mencegah layout web menciut di server Linux
+    options.add_argument("--force-device-scale-factor=1")
+    options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
     driver = uc.Chrome(version_main=154, options=options)
 
@@ -123,6 +126,11 @@ def jalankan_bot():
                 
             elif status_layar == "DashboardScreen":
                 print(f"🤖 [Aksi Model] Dasbor terdeteksi! Mengalihkan ke link target...")
+                
+                # Fitur Debugging Gambar (Bisa dihapus nanti jika sudah lancar 100%)
+                driver.save_screenshot("debug_layar.png")
+                st.image("debug_layar.png", caption="Tangkapan Layar AI Terkini", use_column_width=True)
+                
                 driver.get(url_target)
                 time.sleep(8)
                 continue
@@ -138,10 +146,11 @@ def jalankan_bot():
             elif status_layar == "RekapScreen":
                 print("🤖 [Aksi Model] Halaman rekapan valid! Mengekstrak data tabel...")
                 
-                # JAVASCRIPT REVISI: Daripada mengunduh, kita kirim datanya kembali ke Python
                 js_script = """
                 let rows = document.querySelectorAll('.fi-ta-row, table tr');
-                if (rows.length === 0) { return "gagal"; }
+                
+                // [REVISI] Kembalikan KOSONG agar dieksekusi oleh Python
+                if (rows.length === 0) { return "KOSONG"; }
                 
                 let csv = [];
                 let headers = [];
@@ -168,7 +177,8 @@ def jalankan_bot():
                 """
                 
                 hasil_csv = driver.execute_script(js_script)
-                # 1. CABANG BARU: Jika tabel ada, tapi isinya kosong (0 baris data)
+                
+                # 1. CABANG KOSONG: Tabel ada tapi tidak berisi data
                 if hasil_csv == "KOSONG":
                     print("[-] Tabel kosong. Menggunakan template 'Belum_ada_laporan.csv'...")
                     jam_format = waktu_sekarang.strftime('%H.%M.%S')
@@ -183,25 +193,24 @@ def jalankan_bot():
                     print(f"[-] {pesan_kosong}")
                     return pesan_kosong
 
+                # 2. CABANG SUKSES: Data berhasil ditarik
                 elif hasil_csv != "gagal":
-                    # Python yang mengambil alih penamaan dan pembuatan file
                     jam_format = waktu_sekarang.strftime('%H.%M.%S')
                     nama_file_baru = f"Rekap Laporan LCS {waktu_sekarang.strftime('%d-%m-%Y')}{jam_format}.csv"
                     
-                    # Simpan data teks CSV ke file lokal Streamlit
                     with open(nama_file_baru, "w", encoding="utf-8") as f:
                         f.write(hasil_csv)
                         
                     print(f"[-] File {nama_file_baru} berhasil dibuat. Meneruskan ke Drive...")
                     
-                    # Lempar ke Google Drive
                     file_id = upload_ke_drive(nama_file_baru)
                     pesan_sukses = f"Selesai! Data Rekap LCS terbaru berhasil diunggah ke Drive (ID: {file_id})"
                     print(f"🔥 [SUKSES TOTAL] {pesan_sukses}")
                     return pesan_sukses
                     
+                # 3. CABANG GAGAL: Elemen tabel belum selesai di-render
                 else:
-                    print("[-] Notifikasi: Tabel kosong, mencoba kembali...")
+                    print("[-] Notifikasi: Ekstraksi gagal (tabel belum render), mencoba kembali...")
                     continue
 
     finally:
